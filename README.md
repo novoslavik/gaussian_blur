@@ -12,13 +12,13 @@ Applies a 7×7 Gaussian blur to an image using three implementations and compare
 
 ## Results
 
-Test image: 640×640 px, 3 channels — Intel UHD Graphics 620 / 8-thread CPU
+Test image: 960×1280 px, 3 channels — Intel UHD Graphics 620 / 8-thread CPU
 
 | Implementation | Time |
 |---|---|
-| CPU single-threaded | 3701 ms |
-| CPU multi-threaded (8 threads) | 1272 ms |
-| GPU (OpenCL) | 3.67 ms |
+| CPU single-threaded | 15851 ms |
+| CPU multi-threaded (8 threads) | 2805 ms |
+| GPU (OpenCL) | 10.07 ms |
 
 The GPU is ~1000× faster than the single-threaded CPU version on this workload. This is because Gaussian blur is an embarrassingly parallel problem — every output pixel is independent — which maps directly onto the GPU's massively parallel architecture.
 

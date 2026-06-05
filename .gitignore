@@ -1,0 +1,10 @@
+# Build
+cmake-build-*/
+build/
+
+# IDE
+.idea/
+*.iml
+
+# Output images
+output_*.png
