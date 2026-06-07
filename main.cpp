@@ -147,7 +147,7 @@ cv::Mat blur_gpu(const cv::Mat& img) {
 }
 
 int main() {
-    cv::Mat img = cv::imread("input.png", cv::IMREAD_COLOR);
+    const cv::Mat img = cv::imread("input.png", cv::IMREAD_COLOR);
 
     // --- GPU ---
     const cv::Mat gpuResult = blur_gpu(img);
