@@ -18,6 +18,7 @@ static const float gaussian[49] = {
 };
 
 cv::Mat blur_cpu(const cv::Mat& img) {
+    const auto cpuStart = std::chrono::high_resolution_clock::now();
     const int width    = img.cols;
     const int height   = img.rows;
     const int channels = img.channels();
@@ -39,10 +40,15 @@ cv::Mat blur_cpu(const cv::Mat& img) {
             }
         }
     }
+    const auto cpuEnd = std::chrono::high_resolution_clock::now();
+
+    const double cpuMs = std::chrono::duration<double, std::milli>(cpuEnd - cpuStart).count();
+    std::cout << "CPU time: " << cpuMs << " ms\n";
     return result;
 }
 
 cv::Mat blur_cpu_mt(const cv::Mat& img, int num_threads = 0) {
+    const auto cpuMtStart = std::chrono::high_resolution_clock::now();
     if (num_threads <= 0)
         num_threads = static_cast<int>(std::thread::hardware_concurrency());
 
@@ -80,10 +86,14 @@ cv::Mat blur_cpu_mt(const cv::Mat& img, int num_threads = 0) {
     for (auto& t : threads)
         t.join();
 
+    const auto cpuMtEnd = std::chrono::high_resolution_clock::now();
+
+    const double cpuMtMs = std::chrono::duration<double, std::milli>(cpuMtEnd - cpuMtStart).count();
+    std::cout << "CPU MT time (" << std::thread::hardware_concurrency() << " threads): " << cpuMtMs << " ms\n";
     return result;
 }
 
-int main() {
+cv::Mat blur_gpu(const cv::Mat& img) {
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
 
@@ -109,14 +119,11 @@ int main() {
 
     cl::Kernel kernel(program, "gaussian_blur");
 
-    cv::Mat img = cv::imread("input.png", cv::IMREAD_COLOR);
-
     const int    width    = img.cols;
     const int    height   = img.rows;
     const int    channels = img.channels();
     const size_t size     = width * height * channels;
 
-    // --- GPU ---
     cl::Buffer inputBuf(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, size, img.data);
     cl::Buffer outputBuf(context, CL_MEM_WRITE_ONLY, size);
 
@@ -134,28 +141,25 @@ int main() {
     const auto gpuEnd   = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
     std::cout << "GPU time: " << static_cast<double>(gpuEnd - gpuStart) / 1e6 << " ms\n";
 
-    cv::Mat gpuResult(height, width, CV_8UC3);
-    queue.enqueueReadBuffer(outputBuf, CL_TRUE, 0, size, gpuResult.data);
+    cv::Mat result(height, width, img.type());
+    queue.enqueueReadBuffer(outputBuf, CL_TRUE, 0, size, result.data);
+    return result;
+}
+
+int main() {
+    cv::Mat img = cv::imread("input.png", cv::IMREAD_COLOR);
+
+    // --- GPU ---
+    const cv::Mat gpuResult = blur_gpu(img);
     cv::imwrite("output_gpu.png", gpuResult);
 
     // --- CPU ---
-    const auto cpuStart = std::chrono::high_resolution_clock::now();
     const cv::Mat cpuResult = blur_cpu(img);
-    const auto cpuEnd = std::chrono::high_resolution_clock::now();
-
-    const double cpuMs = std::chrono::duration<double, std::milli>(cpuEnd - cpuStart).count();
-    std::cout << "CPU time: " << cpuMs << " ms\n";
-
     cv::imwrite("output_cpu.png", cpuResult);
 
     // --- CPU multi-threaded ---
-    const auto cpuMtStart = std::chrono::high_resolution_clock::now();
+
     const cv::Mat cpuMtResult = blur_cpu_mt(img);
-    const auto cpuMtEnd = std::chrono::high_resolution_clock::now();
-
-    const double cpuMtMs = std::chrono::duration<double, std::milli>(cpuMtEnd - cpuMtStart).count();
-    std::cout << "CPU MT time (" << std::thread::hardware_concurrency() << " threads): " << cpuMtMs << " ms\n";
-
     cv::imwrite("output_cpu_mt.png", cpuMtResult);
 
     return 0;
