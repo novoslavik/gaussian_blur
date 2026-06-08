@@ -42,9 +42,11 @@ add_executable(gaussian_blur main.cpp)
 target_link_libraries(gaussian_blur OpenCL::OpenCL OpenCL::HeadersCpp ${OpenCV_LIBS})
 target_include_directories(gaussian_blur PRIVATE ${OpenCV_INCLUDE_DIRS})
 
-add_custom_command(TARGET gaussian_blur POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_RUNTIME_DLLS:gaussian_blur>
-        $<TARGET_FILE_DIR:gaussian_blur>
-    COMMAND_EXPAND_LISTS
-)
+if(WIN32)
+    add_custom_command(TARGET gaussian_blur POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:gaussian_blur>
+            $<TARGET_FILE_DIR:gaussian_blur>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
