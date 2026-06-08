@@ -33,7 +33,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(OpenCLHeadersCpp)
 
-list(APPEND CMAKE_PREFIX_PATH "C:/vcpkg/installed/x64-windows")
+if(WIN32)
+    list(APPEND CMAKE_PREFIX_PATH "C:/vcpkg/installed/x64-windows")
+endif()
 find_package(OpenCV REQUIRED)
 
 add_executable(gaussian_blur main.cpp)
